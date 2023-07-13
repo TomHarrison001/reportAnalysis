@@ -3,10 +3,11 @@ from reportlab.graphics import renderPDF
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
-def Export(t, output_path):
-    doc = SimpleDocTemplate('table.pdf', pagesize=letter)
-    doc.build([t])
-    renderPDF.drawToFile(doc, output_path + '\\table.pdf')
+def ExportTable(t, output_path):
+    doc = SimpleDocTemplate(output_path + '\\table.pdf', pagesize=letter)
+    elements = []
+    elements.append(t)
+    doc.build(elements)
 
 
 def CreateTable(D):
@@ -26,13 +27,13 @@ def CreateTable(D):
     # ('ALIGN', (0, -1), (-1, -1), 'CENTER'),
     # ('VALIGN', (0, -1), (-1, -1), 'MIDDLE'),
     # ('TEXTCOLOR', (0, -1), (-1, -1), colors.green),
-    ('INNERGRID', (0, 0), (-1, -1), colors.black),
-    ('BOX', (0, 0), (-1, -1), colors.black),
+    ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
+    ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
 
     return t
 
 
 def FormatPercentage(D, key, i):
-    percentage = round((D[key][i]/sum(D[key]) * 100))
+    percentage = round((D[key][i]/sum(D[key]) * 100), 1)
     return f'{D[key][i]} ({percentage}%)'

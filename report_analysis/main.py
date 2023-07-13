@@ -5,16 +5,16 @@ from pathlib import Path
 from argparse import ArgumentParser
 
 from txt_parser import ExtractData
-from pie_exporter import CreateDrawing, Export as PieExport
-from table_exporter import CreateTable, Export as TableExport
+from pie_exporter import CreateDrawing, ExportDrawing
+from table_exporter import CreateTable, ExportTable
 
 def main(import_file, sheet_name, output_path, conf=None):
     D = ExtractData(import_file, sheet_name)
     d = CreateDrawing(800, 900, D)
-    PieExport(d, output_path)
+    ExportDrawing(d, output_path)
 
     t = CreateTable(D)
-    TableExport(t, output_path)
+    ExportTable(t, output_path)
 
     # def f(x):
     #     return {
