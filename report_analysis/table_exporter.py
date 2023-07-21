@@ -1,26 +1,25 @@
 from reportlab.lib import colors
-from reportlab.graphics import renderPDF
 from reportlab.lib.pagesizes import letter, inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 
-def ExportTable(t, output_path):
+def ExportTable(table, output_path):
     doc = SimpleDocTemplate(output_path + '\\table.pdf', pagesize=letter)
     elements = []
-    elements.append(t)
+    elements.append(table)
     doc.build(elements)
 
 
-def CreateTable(D):
-    data = [[' ', 'Response', 'Discretion', 'Intell.']]
+def CreateTable(data):
+    records = [[' ', 'Response', 'Discretion', 'Intell.']]
 
     for key in ['NA', 'NC', 'NE', 'NH', 'NL', 'NN', 'NR', 'NS', 'NW']:
         record = [key]
         for i in range(3):
-            record.append(FormatPercentage(D, key, i))
-        data.append(record)
+            record.append(FormatPercentage(data, key, i))
+        records.append(record)
 
-    t = Table(data, 5 * [0.9 * inch], 10 * [0.4 * inch])
-    t.setStyle(TableStyle([('ALIGN', (1, 1), (-2, -2), 'RIGHT'),
+    table = Table(records, 5 * [0.9 * inch], 10 * [0.4 * inch])
+    table.setStyle(TableStyle([('ALIGN', (1, 1), (-2, -2), 'RIGHT'),
     # ('TEXTCOLOR', (1, 1), (-2, -2), colors.red),
     # ('VALIGN', (0, 0), (0, -1), 'TOP'),
     # ('TEXTCOLOR', (0, 0), (0, -1), colors.blue),
@@ -31,9 +30,9 @@ def CreateTable(D):
     ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
     ]))
 
-    return t
+    return table
 
 
-def FormatPercentage(D, key, i):
-    percentage = round((D[key][i]/sum(D[key]) * 100), 1)
-    return f'{D[key][i]} ({percentage}%)'
+def FormatPercentage(data, key, i):
+    percentage = round((data[key][i]/sum(data[key]) * 100), 1)
+    return f'{data[key][i]} ({percentage}%)'

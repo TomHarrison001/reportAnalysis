@@ -1,20 +1,18 @@
 """This is the main command line interface"""
 
-from configparser import ConfigParser
 from pathlib import Path
-from argparse import ArgumentParser
 
 from txt_parser import ExtractData
 from pie_exporter import CreateDrawing, ExportDrawing
 from table_exporter import CreateTable, ExportTable
 
 def main(import_file, sheet_name, output_path, conf=None):
-    D = ExtractData(import_file, sheet_name)
-    d = CreateDrawing(800, 900, D)
-    ExportDrawing(d, output_path)
+    data = ExtractData(import_file, sheet_name)
+    drawing = CreateDrawing(800, 900, data)
+    ExportDrawing(drawing, output_path)
 
-    t = CreateTable(D)
-    ExportTable(t, output_path)
+    table = CreateTable(data)
+    ExportTable(table, output_path)
 
     # def f(x):
     #     return {
@@ -22,22 +20,6 @@ def main(import_file, sheet_name, output_path, conf=None):
     #         'officer discretion': 1,
     #         'intelligence-led': 2,
     #     }[x]
-
-    # def createMultiLab(df):
-    #     labs = []
-    #     # !Initiated = officer responding (0)
-    #     # Initiated and !Intel = officer discretion (1)
-    #     # Initiated and Intel = intelligence led (2)
-    #     for index, row in df.iterrows():
-    #         if row['Initiated'] == 0:
-    #             lab = 0
-    #         elif row['Intell'] == 0:
-    #             lab = 1
-    #         else:
-    #             lab = 2
-    #         labs.append(lab)
-    #     df['multi'] = labs
-    #     return df
 
 def api():
     # import file will be terminal arg
