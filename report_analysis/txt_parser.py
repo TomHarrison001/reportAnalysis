@@ -19,16 +19,16 @@ def ExtractData(import_file, sheet_name, na_filter=False):
     whole = pd.read_excel(import_file, sheet_name=sheet_name, na_filter=na_filter)
     dataframe = whole[['Grounds', 'NPA']].copy()
 
-    modelIntell = pickle.load(open('H://NLP//Val_Data//Pickled Trained Models//Intell_model.pkl', 'rb'))
-    modelInit = pickle.load(open('H://NLP//Val_Data//Pickled Trained Models//Initiated_model.pkl', 'rb'))
-    [val_dataloader, raw_dataframe] = ParseData(dataframe)
-    InitPreds = evalModel(modelInit, val_dataloader)
-    IntellPreds = evalModel(modelIntell, val_dataloader)
-    predictions = pd.DataFrame({"Initiated": InitPreds, "Intell": IntellPreds})
-    predictions = createMultiLab(predictions)
-    dataframe['class'] = predictions
+    # modelIntell = pickle.load(open('H://NLP//Val_Data//Pickled Trained Models//Intell_model.pkl', 'rb'))
+    # modelInit = pickle.load(open('H://NLP//Val_Data//Pickled Trained Models//Initiated_model.pkl', 'rb'))
+    # [val_dataloader, raw_dataframe] = ParseData(dataframe)
+    # InitPreds = evalModel(modelInit, val_dataloader)
+    # IntellPreds = evalModel(modelIntell, val_dataloader)
+    # predictions = pd.DataFrame({"Initiated": InitPreds, "Intell": IntellPreds})
+    # predictions = createMultiLab(predictions)
+    # dataframe['class'] = predictions
 
-    # RandomiseData(dataframe)
+    RandomiseData(dataframe)
 
     for index, row in dataframe.iterrows():
         if (not row['NPA'] in data):
