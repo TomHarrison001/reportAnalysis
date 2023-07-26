@@ -1,4 +1,4 @@
-"""This is the main GUI interface"""
+"""This is the GUI object"""
 
 from tkinter import Tk, Label, Button, Entry, filedialog
 
@@ -6,71 +6,71 @@ from txt_parser import ExtractData
 from pie_exporter import CreateDrawing, ExportDrawing
 from table_exporter import CreateTable, ExportTable
 
-def BrowseFiles():
-    import_file = filedialog.askopenfilename(initialdir = '/',
-        title = "Select a File",
-        filetypes = (("XLSX File", '*.xlsx'),))
-    if import_file:
-        file_label.configure(text=import_file)
-    else:
-        file_label.configure(text='Select a File')
+class Window():
+    def __init__(self):
+        self.window = Tk()
+        self.window.title('Report Analysis')
+        self.window.geometry("480x640")
+        self.window.config(background='white')
+        self.widgets = []
+        for text in ['Select a File', 'Sheet name', 'Select an Output Directory']:
+            self.widgets.append(self.CreateLabel(text))
+        self.widgets.insert(1, self.CreateButton('Browse Files', self.BrowseFiles))
+        self.widgets.insert(3, Entry(self.window, bd=3, width=18))
+        self.widgets.insert(5, self.CreateButton('Browse Directories', self.BrowseDirs))
+        self.widgets.append(Label(self.window, text='', bg='white'))
+        self.widgets.append(Button(self.window, text='Submit', command=self.Submit))
+        for widget in self.widgets:
+            index = self.widgets.index(widget)
+            pady = ((index + 1) % 2 * 20, (index + 1) % 2 * 5)
+            widget.grid(column=0, row=index, padx=50, pady=pady)
+        
+    def CreateLabel(self, text):
+        return Label(self.window, text=text, width=50, height=2, fg='blue')
+    
+    def CreateButton(self, text, command):
+        return Button(self.window, text=text, command=command, bd=3, width=18)
+    
+    def BrowseFiles(self):
+        import_file = filedialog.askopenfilename(initialdir = '/',
+            title = "Select a File",
+            filetypes = (("XLSX File", '*.xlsx'),))
+        if import_file:
+            self.widgets[0].configure(text=import_file)
+        else:
+            self.widgets[0].configure(text='Select a File')
 
-def BrowseDirs():
-    output_path = filedialog.askdirectory(initialdir = '/',
-        title = "Select an Output Directory",
-        mustexist=True)
-    if output_path:
-        dir_label.configure(text=output_path)
-    else:
-        dir_label.configure(text='Select an Output Directory')
+    def BrowseDirs(self):
+        output_path = filedialog.askdirectory(initialdir = '/',
+            title = "Select an Output Directory",
+            mustexist=True)
+        if output_path:
+            self.widgets[4].configure(text=output_path)
+        else:
+            self.widgets[4].configure(text='Select an Output Directory')
 
-def Submit():
-    error_label.configure(text='')
-    import_file = file_label['text']
-    sheet_name = sheet_entry.get()
-    output_path = dir_label['text']
-    try:
-        ErrorHandling(import_file, sheet_name, output_path)
-        data = ExtractData(import_file, sheet_name)
-        drawing = CreateDrawing(800, 900, data)
-        ExportDrawing(drawing, output_path)
+    def Submit(self):
+        self.widgets[6].configure(text='')
+        import_file = self.widgets[0]['text']
+        sheet_name = self.widgets[3].get()
+        output_path = self.widgets[4]['text']
+        try:
+            self.ErrorHandling(import_file, sheet_name, output_path)
+            data = ExtractData(import_file, sheet_name)
+            drawing = CreateDrawing(800, 900, data)
+            ExportDrawing(drawing, output_path)
 
-        table = CreateTable(data)
-        ExportTable(table, output_path)
+            table = CreateTable(data)
+            ExportTable(table, output_path)
 
-        error_label.configure(text='Task Completed.', fg='green')
-    except Exception as e:
-        error_label.configure(text=e, fg='red')
+            self.widgets[6].configure(text='Task Completed.', fg='green')
+        except Exception as e:
+            self.widgets[6].configure(text=e, fg='red')
 
-def ErrorHandling(import_file, sheet_name, output_path):
-    if import_file == 'Select a File':
-        raise Exception('No file selected.')
-    if sheet_name.strip() == '':
-        raise Exception('No sheet name entered.')
-    if output_path == 'Select an Output Directory':
-        raise Exception('No directory selected.')
-
-window = Tk()
-window.title('File Explorer')
-window.geometry("1280x720")
-window.config(background='white')
-file_label = Label(window, text='Select a File',
-    width=50, height=2, fg='blue')
-file_button = Button(window, text='Browse Files', command=BrowseFiles, bd=3, width=18)
-sheet_label = Label(window, text="Sheet name", 
-    width=50, height=2, fg='blue')
-sheet_entry = Entry(window, bd=3, width=18)
-dir_label = Label(window, text='Select an Output Directory',
-    width=50, height=2, fg='blue')
-dir_button = Button(window, text='Browse Directories', command=BrowseDirs, bd=3, width=18)
-error_label = Label(window, text='', bg='white')
-submit_button = Button(window, text='Submit', command=Submit)
-file_label.grid(column=0, row=0, padx=5, pady=5)
-file_button.grid(column=1, row=0)
-sheet_label.grid(column=0, row=1, padx=5, pady=5)
-sheet_entry.grid(column=1, row=1)
-dir_label.grid(column=0, row=2, padx=5, pady=5)
-dir_button.grid(column=1, row=2)
-error_label.grid(column=0, row=3, columnspan=2, pady=5)
-submit_button.grid(column=0, row=4, columnspan=2)
-window.mainloop()
+    def ErrorHandling(self, import_file, sheet_name, output_path):
+        if import_file == 'Select a File':
+            raise Exception('No file selected.')
+        if sheet_name.strip() == '':
+            raise Exception('No sheet name entered.')
+        if output_path == 'Select an Output Directory':
+            raise Exception('No directory selected.')

@@ -4,6 +4,8 @@ from txt_parser import ExtractData
 from pie_exporter import CreateDrawing, ExportDrawing
 from table_exporter import CreateTable, ExportTable
 
+from gui import Window
+
 def main(import_file, sheet_name, output_path, conf=None):
     data = ExtractData(import_file, sheet_name)
     drawing = CreateDrawing(800, 900, data)
@@ -20,10 +22,13 @@ def main(import_file, sheet_name, output_path, conf=None):
     #     }[x]
 
 def api():
-    import_file = 'C:\\users\\tomha\\Documents\\Work\\Work 4\\full.xlsx'
-    output_path = 'C:\\users\\tomha\\Documents\\Work\\Work 4\\output'
-    sheet_name = 'sheet1'
-    main(import_file, sheet_name, output_path)
+    # import_file = 'C:\\users\\tomha\\Documents\\Work\\Work 4\\full.xlsx'
+    # output_path = 'C:\\users\\tomha\\Documents\\Work\\Work 4\\output'
+    # sheet_name = 'sheet1'
+    # main(import_file, sheet_name, output_path)
+    
+    w = Window()
+    w.window.mainloop()
 
 if __name__ == '__main__':
     api()
