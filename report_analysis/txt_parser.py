@@ -1,13 +1,13 @@
 """Details of the structure of excel files, extract data into objects with properties"""
 
-import re
-import pandas as pd
-import numpy as np
+from re import sub
+from pandas import read_excel, DataFrame
+from numpy import random, argmax
 from gensim.parsing.preprocessing import remove_stopwords, strip_tags, strip_punctuation, strip_multiple_whitespaces, strip_short, strip_numeric
 from gensim.parsing.porter import PorterStemmer
 from pickle import load
 
-from torch import tensor
+import torch
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 from transformers import BertTokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -17,7 +17,7 @@ def ExtractData(import_file, sheet_name, na_filter=False):
     data = {}
     for key in ['NA', 'NC', 'NE', 'NH', 'NL', 'NN', 'NR', 'NS', 'NW']:
         data[key] = [0, 0, 0]
-    whole = pd.read_excel(import_file, sheet_name=sheet_name, na_filter=na_filter)
+    whole = read_excel(import_file, sheet_name=sheet_name, na_filter=na_filter)
     dataframe = whole[['Grounds', 'NPA']].copy()
 
     root = Path(__file__).parent.parent / 'models'
@@ -25,15 +25,11 @@ def ExtractData(import_file, sheet_name, na_filter=False):
         modelIntell = load(open(str(root / 'Intell_model.pkl'), 'rb'))
         modelInit = load(open(str(root / 'Initiated_model.pkl'), 'rb'))
     except Exception as e:
-        # raise Exception('Model files missing.')
-        print(e)
-        raise e
+        raise Exception('Model files missing.')
     [val_dataloader, raw_dataframe] = ParseData(dataframe)
-    # InitPreds = evalModel(modelInit, val_dataloader)
-    InitPreds = modelInit.predict(val_dataloader)
-    # IntellPreds = evalModel(modelIntell, val_dataloader)
-    IntellPreds = modelIntell.predict(val_dataloader)
-    predictions = pd.DataFrame({"Initiated": InitPreds, "Intell": IntellPreds})
+    InitPreds = EvalModel(modelInit, val_dataloader)
+    IntellPreds = EvalModel(modelIntell, val_dataloader)
+    predictions = DataFrame({"Initiated": InitPreds, "Intell": IntellPreds})
     predictions = createMultiLab(predictions)
     dataframe['class'] = predictions
 
@@ -48,26 +44,43 @@ def ExtractData(import_file, sheet_name, na_filter=False):
 
 def RandomiseData(dataframe):
     # 0 - incident response, 1 - officer discretion, 2 - intelligence led
-    dataframe['class'] = np.random.randint(0, 3, dataframe.shape[0])
+    dataframe['class'] = random.randint(0, 3, dataframe.shape[0])
+
+
+def EvalModel(model, val_dataloader):
+    model.eval()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    predictions = []
+    for batch in val_dataloader:
+        batch = tuple(t.to(device) for t in batch)
+        b_input_ids, b_input_mask = batch
+        with torch.no_grad():
+            logits = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
+        logits = logits[0].detach().cpu().numpy()
+        predictions.append(logits)
     
+    flat_predictions = [item for sublist in predictions for item in sublist]
+    flat_predictions = argmax(flat_predictions, axis=1).flatten()
+    return flat_predictions
+
 
 def ParseData(dataframe):
     raw_data = dataframe['Grounds'].astype(str).tolist()
     tokens = Preprocess(raw_data)
-    raw_dataframe = pd.DataFrame({'Grounds': raw_data})
-    token_dataframe = pd.DataFrame({'Grounds': tokens})
+    raw_dataframe = DataFrame({'Grounds': raw_data})
+    token_dataframe = DataFrame({'Grounds': tokens})
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
     sequences = []
     for sent in token_dataframe['Grounds']:
-        tokenized_sent = tokenizer.encode(sent, max_length=512)
+        tokenized_sent = tokenizer.encode(sent, truncation=True, max_length=512)
         sequences.append(tokenized_sent)
     sequences = pad_sequences(sequences, maxlen=64, dtype="long", value=0, truncating="post", padding="post")
     attention_masks = []
     for sent in sequences:
         mask = [int(token_id > 0) for token_id in sent]
         attention_masks.append(mask)
-    val_inputs = tensor(sequences)
-    val_masks = tensor(attention_masks)
+    val_inputs = torch.tensor(sequences)
+    val_masks = torch.tensor(attention_masks)
     val_data = TensorDataset(val_inputs, val_masks)
     val_sampler = SequentialSampler(val_data)
     batch_size = 16
@@ -91,7 +104,7 @@ def Preprocess(data):
         for method in [strip_punctuation, strip_multiple_whitespaces, strip_numeric, remove_stopwords, strip_short]:
             token = method(token)
         for key, value in replacements.items():
-            token = re.sub(key, value, token)
+            token = sub(key, value, token)
         token = stemmer.stem(token)
         tokens_cleaned.append(token)
 

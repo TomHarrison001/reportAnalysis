@@ -1,6 +1,8 @@
 """This is the GUI object"""
 
-from tkinter import Tk, Label, Button, Entry, filedialog
+from tkinter import Tk, Label, Button, Entry, filedialog, HORIZONTAL
+from tkinter.ttk import Progressbar
+from threading import Thread
 
 from txt_parser import ExtractData
 from pie_exporter import CreateDrawing, ExportDrawing
@@ -24,6 +26,7 @@ class Window():
             index = self.widgets.index(widget)
             pady = ((index + 1) % 2 * 20, (index + 1) % 2 * 5)
             widget.grid(column=0, row=index, padx=50, pady=pady)
+        self.progress = Progressbar(self.window, orient=HORIZONTAL, length=200, mode='indeterminate')
         
     def CreateLabel(self, text):
         return Label(self.window, text=text, width=50, height=2, fg='blue')
@@ -54,18 +57,30 @@ class Window():
         import_file = self.widgets[0]['text']
         sheet_name = self.widgets[3].get()
         output_path = self.widgets[4]['text']
-        try:
-            self.ErrorHandling(import_file, sheet_name, output_path)
-            data = ExtractData(import_file, sheet_name)
-            drawing = CreateDrawing(800, 900, data)
-            ExportDrawing(drawing, output_path)
+        def real_submit():
+            self.widgets[6]['state'] = 'disabled'
+            self.widgets[7]['state'] = 'disabled'
+            self.progress.grid(row=8, column=0, pady=20)
+            self.progress.start()
+            try:
+                self.ErrorHandling(import_file, sheet_name, output_path)
+                data = ExtractData(import_file, sheet_name)
+                drawing = CreateDrawing(800, 900, data)
+                ExportDrawing(drawing, output_path)
 
-            table = CreateTable(data)
-            ExportTable(table, output_path)
+                table = CreateTable(data)
+                ExportTable(table, output_path)
 
-            self.widgets[6].configure(text='Task Completed.', fg='green')
-        except Exception as e:
-            self.widgets[6].configure(text=e, fg='red')
+                self.widgets[6].configure(text='Task Completed.', fg='green')
+            except Exception as e:
+                if str(e).startswith("\"None of [Index(['Grounds', 'NPA'"):
+                    e = Exception("Worksheet needs Grounds and NPA columns.")
+                self.widgets[6].configure(text=e, fg='red')
+            self.progress.stop()
+            self.progress.grid_forget()
+            self.widgets[6]['state'] = 'normal'
+            self.widgets[7]['state'] = 'normal'
+        Thread(target=real_submit).start()
 
     def ErrorHandling(self, import_file, sheet_name, output_path):
         if import_file == 'Select a File':
