@@ -5,12 +5,13 @@ import pandas as pd
 import numpy as np
 from gensim.parsing.preprocessing import remove_stopwords, strip_tags, strip_punctuation, strip_multiple_whitespaces, strip_short, strip_numeric
 from gensim.parsing.porter import PorterStemmer
-import pickle
+from pickle import load
 
-import torch
+from torch import tensor
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 from transformers import BertTokenizer
-# from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.sequence import pad_sequences
+from pathlib import Path
 
 def ExtractData(import_file, sheet_name, na_filter=False):
     data = {}
@@ -19,16 +20,24 @@ def ExtractData(import_file, sheet_name, na_filter=False):
     whole = pd.read_excel(import_file, sheet_name=sheet_name, na_filter=na_filter)
     dataframe = whole[['Grounds', 'NPA']].copy()
 
-    # modelIntell = pickle.load(open('H://NLP//Val_Data//Pickled Trained Models//Intell_model.pkl', 'rb'))
-    # modelInit = pickle.load(open('H://NLP//Val_Data//Pickled Trained Models//Initiated_model.pkl', 'rb'))
-    # [val_dataloader, raw_dataframe] = ParseData(dataframe)
+    root = Path(__file__).parent.parent / 'models'
+    try:
+        modelIntell = load(open(str(root / 'Intell_model.pkl'), 'rb'))
+        modelInit = load(open(str(root / 'Initiated_model.pkl'), 'rb'))
+    except Exception as e:
+        # raise Exception('Model files missing.')
+        print(e)
+        raise e
+    [val_dataloader, raw_dataframe] = ParseData(dataframe)
     # InitPreds = evalModel(modelInit, val_dataloader)
+    InitPreds = modelInit.predict(val_dataloader)
     # IntellPreds = evalModel(modelIntell, val_dataloader)
-    # predictions = pd.DataFrame({"Initiated": InitPreds, "Intell": IntellPreds})
-    # predictions = createMultiLab(predictions)
-    # dataframe['class'] = predictions
+    IntellPreds = modelIntell.predict(val_dataloader)
+    predictions = pd.DataFrame({"Initiated": InitPreds, "Intell": IntellPreds})
+    predictions = createMultiLab(predictions)
+    dataframe['class'] = predictions
 
-    RandomiseData(dataframe)
+    # RandomiseData(dataframe)
 
     for index, row in dataframe.iterrows():
         if (not row['NPA'] in data):
@@ -57,8 +66,8 @@ def ParseData(dataframe):
     for sent in sequences:
         mask = [int(token_id > 0) for token_id in sent]
         attention_masks.append(mask)
-    val_inputs = torch.tensor(sequences)
-    val_masks = torch.tensor(attention_masks)
+    val_inputs = tensor(sequences)
+    val_masks = tensor(attention_masks)
     val_data = TensorDataset(val_inputs, val_masks)
     val_sampler = SequentialSampler(val_data)
     batch_size = 16
